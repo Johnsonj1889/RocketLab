@@ -3,7 +3,7 @@
 <h2>Turbopump Monitoring System</h2>
 
  <p id="engineStatus">Engine Status: OFFLINE</p>
- 
+
 
 <button onclick="startEngine()">START ENGINE</button>
 <script>
@@ -11,3 +11,1665 @@
         document.getElementById("engineStatus").textContent = "Engine Status: RUNNING";
     }
 </script>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RocketLab Mission Control</title>
+
+    <style>
+        body {
+            background-color: #101820;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, sans-serif;
+            margin: 0;
+            padding: 25px;
+        }
+
+        h1 {
+            color: #043d50;
+            text-align: center;
+        }
+
+        h2 {
+            color: #00bfff;
+        }
+
+        .panel {
+            background-color: #1c2936;
+            border: 1px solid #34495e;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .instruments {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .gauge {
+            background-color: #263746;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .value {
+            color: #00ff99;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        button {
+            padding: 12px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .start {
+            background-color: #00cc66;
+        }
+
+        .stop {
+            background-color: #ff4444;
+            color: white;
+        }
+
+        .reset {
+            background-color: #ffcc00;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        select {
+            padding: 10px;
+            background: #263746;
+            color: white;
+            border: 1px solid #607080;
+            border-radius: 5px;
+        }
+
+        #engineStatus {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff5555;
+        }
+
+        #alarmStatus {
+            font-weight: bold;
+            color: #00ff99;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🚀 ROCKETLAB MISSION CONTROL</h1>
+
+    <div class="panel">
+
+        <h2>ENGINE CONTROL</h2>
+
+        <p id="engineStatus">Engine Status: OFFLINE</p>
+
+        <button class="start" onclick="startEngine()">
+            START ENGINE
+        </button>
+
+        <button class="stop" onclick="stopEngine()">
+            STOP ENGINE
+        </button>
+
+        <h3>Engine Throttle</h3>
+
+        <input
+            type="range"
+            id="throttle"
+            min="0"
+            max="100"
+            value="0"
+        >
+
+        <p>
+            Throttle Command:
+            <span id="throttleValue">0</span>%
+        </p>
+
+    </div>
+
+    <div class="panel">
+        <div class="panel">
+
+    <h2>TURBOPUMP LOAD CONTROL</h2>
+
+    <p>Simulated Mechanical Load</p>
+
+    <input
+        type="range"
+        id="pumpLoad"
+        min="0"
+        max="100"
+        value="0"
+    >
+
+    <p>
+        Pump Load:
+        <span id="pumpLoadValue">0</span>%
+    </p>
+
+</div>
+
+        <h2>PROPULSION INSTRUMENTATION</h2>
+
+        <div class="instruments">
+
+            <div class="gauge">
+                <h3>ST-101</h3>
+                <p>Turbopump Speed</p>
+                <div class="value" id="rpm">0 RPM</div>
+            </div>
+
+            <div class="gauge">
+                <h3>PT-201</h3>
+                <p>Pump Inlet Pressure</p>
+                <div class="value" id="inletPressure">0 bar</div>
+            </div>
+
+            <div class="gauge">
+                <h3>PT-202</h3>
+                <p>Pump Discharge Pressure</p>
+                <div class="value" id="dischargePressure">0 bar</div>
+            </div>
+
+            <div class="gauge">
+                <h3>PT-110</h3>
+                <p>Chamber Pressure</p>
+                <div class="value" id="chamberPressure">0 bar</div>
+            </div>
+
+            <div class="gauge">
+                <h3>TT-301</h3>
+                <p>Bearing Temperature</p>
+                <div class="value" id="temperature">25 °C</div>
+            </div>
+
+            <div class="gauge">
+                <h3>VT-301</h3>
+                <p>Bearing Vibration</p>
+                <div class="value" id="vibration">0 mm/s</div>
+            </div>
+
+            <div class="gauge">
+                <h3>FT-203</h3>
+                <p>Propellant Flow</p>
+                <div class="value" id="flow">0 kg/s</div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <h2>SIMULATED FAULT INJECTION</h2>
+
+        <select id="faultSelect">
+
+            <option value="none">Normal Operation</option>
+
+            <option value="inlet">Low Inlet Pressure</option>
+
+            <option value="bearing">Bearing Damage</option>
+
+            <option value="sensor">RPM Sensor Failure</option>
+
+        </select>
+
+        <button class="reset" onclick="resetFault()">
+            RESET FAULT
+        </button>
+
+    </div>
+
+    <div class="panel">
+
+        <h2>ALARM MONITOR</h2>
+
+        <p id="alarmStatus">SYSTEM NORMAL</p>
+
+    </div>
+
+    <script>
+
+        // SIMULATED ENGINE STATE
+
+        let engineRunning = false;
+
+        let throttle = 0;
+
+        let rpm = 0;
+
+        let temperature = 25;
+
+        let vibration = 0;
+
+        let inletPressure = 0;
+
+        let dischargePressure = 0;
+
+        let chamberPressure = 0;
+
+        let flow = 0;
+
+
+        // START ENGINE
+
+        function startEngine() {
+
+            engineRunning = true;
+
+            document.getElementById("engineStatus")
+                .textContent = "Engine Status: RUNNING";
+
+            document.getElementById("engineStatus")
+                .style.color = "#00ff99";
+
+        }
+
+
+        // STOP ENGINE
+
+        function stopEngine() {
+
+            engineRunning = false;
+
+            document.getElementById("engineStatus")
+                .textContent = "Engine Status: OFFLINE";
+
+            document.getElementById("engineStatus")
+                .style.color = "#ff5555";
+
+        }
+
+
+        // READ THROTTLE COMMAND
+
+        const throttleSlider =
+            document.getElementById("throttle");
+
+        throttleSlider.addEventListener("input", function() {
+
+            throttle = Number(throttleSlider.value);
+
+            document.getElementById("throttleValue")
+                .textContent = throttle;
+
+        });
+
+
+        // RESET SIMULATED FAULT
+
+        function resetFault() {
+
+            document.getElementById("faultSelect").value = "none";
+
+        }
+
+
+        // UPDATE SIMULATED INSTRUMENTS
+
+        function updateInstruments() {
+
+            let fault =
+                document.getElementById("faultSelect").value;
+
+            let targetRPM = 0;
+
+            let alarms = [];
+
+            if (engineRunning) {
+
+                targetRPM = throttle * 300;
+
+            }
+
+            // Simulated pump response
+
+         // READ SIMULATED PUMP LOAD
+
+let pumpLoad = Number(
+    document.getElementById("pumpLoad").value
+);
+
+// UPDATE LOAD DISPLAY
+
+document.getElementById("pumpLoadValue")
+    .textContent = pumpLoad;
+
+// CALCULATE SIMULATED LOAD RESISTANCE
+
+let loadResistance = 0;
+
+if (engineRunning) {
+    loadResistance = pumpLoad * 2;
+}
+
+// CALCULATE NEW SHAFT SPEED
+
+rpm += (targetRPM - rpm) * 0.08 - loadResistance;
+
+// PREVENT NEGATIVE RPM
+
+rpm = Math.max(0, rpm);
+
+            if (Math.abs(rpm) < 1) {
+                rpm = 0;
+            }
+
+
+            // Fictional demonstration values.
+            // These are NOT real rocket-engine specifications.
+
+            if (engineRunning) {
+
+                inletPressure = 8;
+
+                dischargePressure = rpm * 0.006;
+
+                chamberPressure = rpm * 0.003;
+
+                flow = rpm * 0.002;
+
+                temperature +=
+                    ((35 + throttle * 0.35) - temperature) * 0.04;
+
+                vibration = 0.5 + rpm / 15000;
+
+            } else {
+
+                inletPressure = 0;
+
+                dischargePressure = rpm * 0.006;
+
+                chamberPressure = 0;
+
+                flow = 0;
+
+                temperature += (25 - temperature) * 0.04;
+
+                vibration = rpm / 15000;
+
+            }
+
+
+            // FAULT: LOW INLET PRESSURE
+
+            if (fault === "inlet" && engineRunning) {
+
+                inletPressure = 1.5;
+
+                flow *= 0.65;
+
+                dischargePressure *= 0.70;
+
+                alarms.push("LOW PUMP INLET PRESSURE");
+
+            }
+
+
+            // FAULT: BEARING DAMAGE
+
+            if (fault === "bearing" && engineRunning) {
+
+                vibration += 5;
+
+                temperature += 0.2;
+
+                alarms.push("HIGH BEARING VIBRATION");
+
+                if (temperature > 90) {
+
+                    alarms.push("HIGH BEARING TEMPERATURE");
+
+                }
+
+            }
+
+
+            // FAULT: SPEED SENSOR FAILURE
+
+            let rpmDisplay = Math.round(rpm) + " RPM";
+
+            if (fault === "sensor") {
+
+                rpmDisplay = "SENSOR FAULT";
+
+                alarms.push("ST-101 SIGNAL FAILURE");
+
+            }
+
+
+            // UPDATE HMI DISPLAYS
+
+            document.getElementById("rpm")
+                .textContent = rpmDisplay;
+
+            document.getElementById("inletPressure")
+                .textContent = inletPressure.toFixed(1) + " bar";
+
+            document.getElementById("dischargePressure")
+                .textContent = dischargePressure.toFixed(1) + " bar";
+
+            document.getElementById("chamberPressure")
+                .textContent = chamberPressure.toFixed(1) + " bar";
+
+            document.getElementById("temperature")
+                .textContent = temperature.toFixed(1) + " °C";
+
+            document.getElementById("vibration")
+                .textContent = vibration.toFixed(2) + " mm/s";
+
+            document.getElementById("flow")
+                .textContent = flow.toFixed(1) + " kg/s";
+
+
+            // UPDATE ALARM DISPLAY
+
+            let alarmDisplay =
+                document.getElementById("alarmStatus");
+
+            if (alarms.length > 0) {
+
+                alarmDisplay.textContent = alarms.join(" | ");
+
+                alarmDisplay.style.color = "#ff4444";
+
+            } else {
+
+                alarmDisplay.textContent = "SYSTEM NORMAL";
+
+                alarmDisplay.style.color = "#00ff99";
+
+            }
+
+        }
+
+
+        // UPDATE EVERY 100 MILLISECONDS
+
+        setInterval(updateInstruments, 100);
+
+    </script>
+
+</body>
+<!-- ================================== -->
+<!-- ROCKETLAB PREFLIGHT MONITORING -->
+<!-- ================================== -->
+
+<style>
+    #preflightPanel {
+        background: #172432;
+        color: white;
+        padding: 25px;
+        margin-top: 25px;
+        border: 2px solid #00bfff;
+        border-radius: 10px;
+        font-family: Arial, sans-serif;
+    }
+
+    #preflightPanel h2 {
+        color: #00bfff;
+    }
+
+    .preflight-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .preflight-instrument {
+        background: #243747;
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    .preflight-instrument label {
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .preflight-instrument input[type="range"] {
+        width: 100%;
+    }
+
+    .preflight-reading {
+        color: #00ff99;
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    .preflight-button {
+        background: #00bfff;
+        color: black;
+        padding: 14px;
+        margin-top: 20px;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    #preflightStatus {
+        font-size: 24px;
+        font-weight: bold;
+        color: #ffcc00;
+        margin-top: 20px;
+    }
+
+    #preflightFaults {
+        line-height: 1.8;
+        white-space: pre-line;
+    }
+</style>
+
+
+<div id="preflightPanel">
+
+    <h2>🚀 PREFLIGHT SYSTEMS MONITOR</h2>
+
+    <p>
+        Simulated engine instrumentation and
+        preflight diagnostic testing.
+    </p>
+
+    <div class="preflight-grid">
+
+        <!-- LIQUID HYDROGEN TEMPERATURE -->
+
+        <div class="preflight-instrument">
+            <h3>TT-101</h3>
+            <label>Liquid Hydrogen Temperature</label>
+
+            <div class="preflight-reading" id="pfHydrogenReading">
+                -253 °C
+            </div>
+
+            <input type="range"
+                id="pfHydrogen"
+                min="-260"
+                max="-245"
+                value="-253"
+                step="1">
+        </div>
+
+
+        <!-- LIQUID OXYGEN TEMPERATURE -->
+
+        <div class="preflight-instrument">
+            <h3>TT-102</h3>
+            <label>Liquid Oxygen Temperature</label>
+
+            <div class="preflight-reading" id="pfOxygenReading">
+                -183 °C
+            </div>
+
+            <input type="range"
+                id="pfOxygen"
+                min="-190"
+                max="-170"
+                value="-183">
+        </div>
+
+
+        <!-- FUEL SUPPLY PRESSURE -->
+
+        <div class="preflight-instrument">
+            <h3>PT-201</h3>
+            <label>Fuel Supply Pressure</label>
+
+            <div class="preflight-reading" id="pfFuelReading">
+                8 bar
+            </div>
+
+            <input type="range"
+                id="pfFuel"
+                min="0"
+                max="15"
+                value="8"
+                step="0.5">
+        </div>
+
+
+        <!-- OXIDIZER SUPPLY PRESSURE -->
+
+        <div class="preflight-instrument">
+            <h3>PT-202</h3>
+            <label>Oxidizer Supply Pressure</label>
+
+            <div class="preflight-reading" id="pfOxReading">
+                9 bar
+            </div>
+
+            <input type="range"
+                id="pfOx"
+                min="0"
+                max="15"
+                value="9"
+                step="0.5">
+        </div>
+
+
+        <!-- BEARING TEMPERATURE -->
+
+        <div class="preflight-instrument">
+            <h3>TT-301</h3>
+            <label>Turbopump Bearing Temperature</label>
+
+            <div class="preflight-reading" id="pfBearingReading">
+                30 °C
+            </div>
+
+            <input type="range"
+                id="pfBearing"
+                min="0"
+                max="120"
+                value="30">
+        </div>
+
+
+        <!-- VIBRATION -->
+
+        <div class="preflight-instrument">
+            <h3>VT-301</h3>
+            <label>Bearing Vibration Baseline</label>
+
+            <div class="preflight-reading" id="pfVibrationReading">
+                0.2 mm/s
+            </div>
+
+            <input type="range"
+                id="pfVibration"
+                min="0"
+                max="10"
+                step="0.1"
+                value="0.2">
+        </div>
+
+
+        <!-- HYDRAULIC PRESSURE -->
+
+        <div class="preflight-instrument">
+            <h3>PT-401</h3>
+            <label>Actuation Hydraulic Pressure</label>
+
+            <div class="preflight-reading" id="pfHydraulicReading">
+                210 bar
+            </div>
+
+            <input type="range"
+                id="pfHydraulic"
+                min="0"
+                max="300"
+                value="210">
+        </div>
+
+
+        <!-- HYDRAULIC TEMPERATURE -->
+
+        <div class="preflight-instrument">
+            <h3>TT-401</h3>
+            <label>Hydraulic Fluid Temperature</label>
+
+            <div class="preflight-reading" id="pfHydraulicTempReading">
+                35 °C
+            </div>
+
+            <input type="range"
+                id="pfHydraulicTemp"
+                min="0"
+                max="100"
+                value="35">
+        </div>
+
+
+        <!-- CONTROL POWER -->
+
+        <div class="preflight-instrument">
+            <h3>PS-501</h3>
+            <label>Control Power</label>
+
+            <div class="preflight-reading" id="pfVoltageReading">
+                24 VDC
+            </div>
+
+            <input type="range"
+                id="pfVoltage"
+                min="0"
+                max="30"
+                value="24"
+                step="0.5">
+        </div>
+
+
+        <!-- SENSOR COMMUNICATION -->
+
+        <div class="preflight-instrument">
+            <h3>COM-501</h3>
+            <label>Instrumentation Communication</label>
+
+            <p>
+                <input type="checkbox"
+                    id="pfComms"
+                    checked>
+                Communication Healthy
+            </p>
+
+            <p>
+                <input type="checkbox"
+                    id="pfSensorHealthy"
+                    checked>
+                Sensor Self-Test Passed
+            </p>
+        </div>
+
+    </div>
+
+
+    <button class="preflight-button"
+        onclick="runPreflight()">
+
+        RUN PREFLIGHT INSPECTION
+
+    </button>
+
+    <div id="preflightStatus">
+        PREFLIGHT NOT COMPLETED
+    </div>
+
+    <p id="preflightFaults">
+        Awaiting inspection...
+    </p>
+
+</div>
+
+
+<!-- ================================== -->
+<!-- PREFLIGHT CONTROL LOGIC -->
+<!-- ================================== -->
+
+<script>
+
+    // GET NUMERICAL INSTRUMENT READING
+
+    function pfRead(id) {
+        return Number(document.getElementById(id).value);
+    }
+
+
+    // UPDATE INSTRUMENT DISPLAYS
+
+    function updatePreflightReadings() {
+
+        const instruments = [
+            ["pfHydrogen", "pfHydrogenReading", "°C"],
+            ["pfOxygen", "pfOxygenReading", "°C"],
+            ["pfFuel", "pfFuelReading", "bar"],
+            ["pfOx", "pfOxReading", "bar"],
+            ["pfBearing", "pfBearingReading", "°C"],
+            ["pfVibration", "pfVibrationReading", "mm/s"],
+            ["pfHydraulic", "pfHydraulicReading", "bar"],
+            ["pfHydraulicTemp", "pfHydraulicTempReading", "°C"],
+            ["pfVoltage", "pfVoltageReading", "VDC"]
+        ];
+
+        for (const instrument of instruments) {
+
+            const input = document.getElementById(instrument[0]);
+
+            const output = document.getElementById(instrument[1]);
+
+            output.textContent =
+                input.value + " " + instrument[2];
+        }
+    }
+
+
+    // PREFLIGHT INSPECTION
+
+    function runPreflight() {
+
+        let faults = [];
+
+        let hydrogen = pfRead("pfHydrogen");
+        let oxygen = pfRead("pfOxygen");
+
+        let fuelPressure = pfRead("pfFuel");
+        let oxPressure = pfRead("pfOx");
+
+        let bearingTemp = pfRead("pfBearing");
+        let vibration = pfRead("pfVibration");
+
+        let hydraulicPressure = pfRead("pfHydraulic");
+        let hydraulicTemp = pfRead("pfHydraulicTemp");
+
+        let voltage = pfRead("pfVoltage");
+
+        let comms = document.getElementById("pfComms").checked;
+
+        let sensorHealthy =
+            document.getElementById("pfSensorHealthy").checked;
+
+
+        // DEMONSTRATION LIMITS ONLY
+        // NOT ACTUAL ROCKET ENGINE LIMITS
+
+
+        // CRYOGENIC TEMPERATURE CHECK
+
+        if (hydrogen < -256 || hydrogen > -252) {
+            faults.push("TT-101: Hydrogen temperature outside demonstration range");
+        }
+
+        if (oxygen < -186 || oxygen > -180) {
+            faults.push("TT-102: Oxygen temperature outside demonstration range");
+        }
+
+
+        // PROPELLANT PRESSURE CHECK
+
+        if (fuelPressure < 6 || fuelPressure > 10) {
+            faults.push("PT-201: Fuel supply pressure abnormal");
+        }
+
+        if (oxPressure < 7 || oxPressure > 11) {
+            faults.push("PT-202: Oxidizer supply pressure abnormal");
+        }
+
+
+        // BEARING CONDITION CHECK
+
+        if (bearingTemp > 65) {
+            faults.push("TT-301: Bearing temperature high");
+        }
+
+        if (vibration > 1) {
+            faults.push("VT-301: Vibration baseline abnormal");
+        }
+
+
+        // HYDRAULIC SYSTEM CHECK
+
+        if (hydraulicPressure < 185 ||
+            hydraulicPressure > 235) {
+
+            faults.push("PT-401: Hydraulic pressure abnormal");
+        }
+
+        if (hydraulicTemp > 60) {
+            faults.push("TT-401: Hydraulic temperature high");
+        }
+
+
+        // ELECTRICAL CHECK
+
+        if (voltage < 22 || voltage > 26) {
+            faults.push("PS-501: Control voltage abnormal");
+        }
+
+
+        // INSTRUMENTATION CHECK
+
+        if (!comms) {
+            faults.push("COM-501: Communication failure");
+        }
+
+        if (!sensorHealthy) {
+            faults.push("Instrumentation self-test failure");
+        }
+
+
+        // DISPLAY RESULTS
+
+        const status =
+            document.getElementById("preflightStatus");
+
+        const faultDisplay =
+            document.getElementById("preflightFaults");
+
+
+        if (faults.length === 0) {
+
+            status.textContent =
+                "GO — DEMONSTRATION CHECKS PASSED";
+
+            status.style.color = "#00ff99";
+
+            faultDisplay.textContent =
+                "All simulated preflight readings passed.\n" +
+                "Engine start remains locked.";
+
+        } else {
+
+            status.textContent =
+                "NO-GO — " + faults.length + " FAULT(S)";
+
+            status.style.color = "#ff4444";
+
+            faultDisplay.textContent =
+                faults.join("\n");
+        }
+
+    }
+
+
+    // REQUIRE A NEW INSPECTION AFTER ANY CHANGE
+
+    document.querySelectorAll(
+        "#preflightPanel input"
+    ).forEach(function(input) {
+
+        input.addEventListener("input", function() {
+
+            updatePreflightReadings();
+
+            const status =
+                document.getElementById("preflightStatus");
+
+            status.textContent = "PREFLIGHT RECHECK REQUIRED";
+            status.style.color = "#ffcc00";
+
+            document.getElementById("preflightFaults")
+                .textContent = "Instrument conditions changed.";
+
+        });
+
+        input.addEventListener("change", function() {
+            updatePreflightReadings();
+        });
+
+    });
+
+
+    // KEEP THE SIMULATED ENGINE START LOCKED
+
+    document.querySelectorAll(
+        'button[onclick*="startEngine"]'
+    ).forEach(function(button) {
+
+        button.disabled = true;
+        button.title = "Engine start locked during preflight development";
+
+    });
+
+
+    // OVERRIDE THE ORIGINAL START FUNCTION
+
+    window.startEngine = function() {
+
+        if (typeof engineRunning !== "undefined") {
+            engineRunning = false;
+        }
+
+        const status = document.getElementById("engineStatus");
+
+        if (status) {
+            status.textContent = "Engine Status: START LOCKED";
+            status.style.color = "#ffcc00";
+        }
+
+        alert("Engine start is locked. Preflight development only.");
+    };
+
+
+    // INITIALIZE DISPLAYS
+
+    updatePreflightReadings();
+
+    const engineStatusDisplay =
+        document.getElementById("engineStatus");
+
+    if (engineStatusDisplay) {
+        engineStatusDisplay.textContent =
+            "Engine Status: START LOCKED";
+        engineStatusDisplay.style.color = "#ffcc00";
+    }
+
+</script>
+<!-- ROCKETLAB MONITORING ADD-ON: paste immediately BEFORE </body> in your existing index.html -->
+<!-- ROCKETLAB MONITORING V3: VISUAL TANK DRAWDOWN + FONT CONTROL. REPLACE THE PREVIOUS V2 MONITORING ADD-ON WITH THIS ENTIRE BLOCK. -->
+<style>
+#rl-monitor {color:#e6f2fb;background:#111e2c;border:2px solid #2d5875;border-radius:14px;padding:20px;margin:28px 0;font-family:'Segoe UI',Arial,sans-serif}
+#rl-monitor * {box-sizing:border-box}
+#rl-monitor h2,#rl-monitor h3 {color:#6dd2ff;margin:0 0 10px}
+#rl-monitor p {line-height:1.45}
+#rl-monitor .rl-note {color:#aec4d5;font-size:13px}
+#rl-monitor .rl-row {display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+#rl-monitor button,#rl-monitor select,#rl-monitor input {font:inherit}
+#rl-monitor button,#rl-monitor select {padding:9px 12px;border-radius:7px;border:1px solid #55748b;min-height:40px}
+#rl-monitor button {background:#164768;color:#fff;cursor:pointer}
+#rl-monitor button:hover {background:#20628b}
+#rl-monitor select,#rl-monitor input[type="search"] {color:#e6f2fb;background:#203349;border:1px solid #597c96}
+#rl-monitor input[type="search"] {padding:10px;border-radius:7px;width:min(290px,100%)}
+#rl-monitor label {display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px}
+#rl-monitor .rl-box {background:#1b2a3b;border:1px solid #32485b;border-radius:10px;padding:15px;margin-top:15px;min-width:0}
+#rl-monitor .rl-cards {display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+#rl-monitor .rl-card {width:100%;text-align:left;background:#22394d;color:#fff;border:1px solid #385c76;border-radius:9px;padding:12px;cursor:pointer}
+#rl-monitor .rl-card[aria-pressed="true"] {outline:2px solid #75d9ff}
+#rl-monitor .rl-tag {font-size:12px;color:#9bd5f4;letter-spacing:.06em}
+#rl-monitor .rl-name {font-size:13px;min-height:35px;margin-top:6px;color:#d6e4ed}
+#rl-monitor .rl-reading {font-size:22px;font-weight:bold;margin:9px 0 7px}
+#rl-monitor .rl-pill {font-size:11px;padding:3px 7px;border-radius:16px;display:inline-block;background:#244a3e;color:#9ef0b3}
+#rl-monitor .rl-pill.warn {background:#59491c;color:#ffe29b}
+#rl-monitor .rl-pill.bad {background:#612d36;color:#ffc3cb}
+#rl-monitor .rl-chart-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:12px}
+#rl-monitor canvas {width:100%;height:190px;background:#0c1925;border:1px solid #35506a;border-radius:7px;display:block}
+#rl-monitor .rl-alarm {padding:7px 0;border-bottom:1px solid #344a5b;font-size:13px}
+#rl-monitor .rl-alarm:last-child {border-bottom:0}
+#rl-monitor .rl-banner {padding:12px;background:#3b321f;color:#ffe6a0;border-radius:7px;font-weight:bold}
+#rl-monitor #rl-offset {width:min(230px,70vw)}
+@media(max-width:520px){#rl-monitor{padding:12px}#rl-monitor .rl-cards{grid-template-columns:repeat(2,minmax(0,1fr))}#rl-monitor .rl-reading{font-size:18px}}
+
+/* Dedicated fuel and oxidizer tank station */
+#rl-monitor .rl-fuel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;margin-top:12px}
+#rl-monitor .rl-tank{background:#142738;border:1px solid #36516a;border-radius:10px;padding:14px;min-width:0}
+#rl-monitor .rl-tank-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center}
+#rl-monitor .rl-tank-assembly{width:146px;flex:none;display:flex;align-items:center;flex-direction:column}
+#rl-monitor .rl-tank-inlet{width:42px;height:15px;background:linear-gradient(90deg,#738da0,#e5f0fa,#71899a);border:2px solid #9db5c6;border-radius:5px 5px 0 0}
+#rl-monitor .rl-tank-outlet{width:34px;height:17px;background:linear-gradient(90deg,#627c8d,#d9eaf5,#6c8898);border:2px solid #9db5c6;border-radius:0 0 4px 4px}
+#rl-monitor .rl-tank-vessel{position:relative;width:142px;height:238px;flex:none;border:5px solid #8aa9bc;border-radius:42px 42px 38px 38px;overflow:hidden;background:linear-gradient(90deg,#0d1b2b,#233d53 48%,#0d1b2b);box-shadow:inset 12px 0 20px #07131e,inset -10px 0 18px #0a1722}
+#rl-monitor .rl-tank-vessel:after{content:"";position:absolute;inset:6px;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0,transparent 42px,#d7edf526 43px,transparent 44px);border-radius:28px}
+#rl-monitor .rl-tank-liquid{position:absolute;bottom:0;left:0;right:0;height:0;transition:height .48s linear;background:linear-gradient(90deg,#0a4979,#49d0f2 46%,#116b9e)}
+#rl-monitor .rl-tank-liquid:before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:#b0f0ff;box-shadow:0 0 9px #9eeeff}
+#rl-monitor #rl-lox-fill{background:linear-gradient(90deg,#92501f,#ffc77a 50%,#b97428)}
+#rl-monitor #rl-lox-fill:before{background:#ffe2b9;box-shadow:0 0 9px #ffca92}
+#rl-monitor .rl-tank-percent{position:absolute;z-index:3;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#fff;text-shadow:0 2px 8px #051c30}
+#rl-monitor .rl-tank-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;min-width:170px}
+#rl-monitor .rl-tank-stats small{display:block;color:#b6c8d7;font-size:11px}
+#rl-monitor .rl-tank-stats strong{font-size:16px;color:white}
+#rl-monitor .rl-fuel-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin:15px 0}
+#rl-monitor .rl-fuel-controls label{display:block;border:1px solid #3a546a;border-radius:8px;padding:10px;background:#182d3d}
+#rl-monitor .rl-fuel-controls input[type=range]{width:100%;margin-top:8px}
+#rl-monitor .rl-fuel-controls output{font-weight:bold;color:#b6ebff}
+#rl-monitor .rl-fuel-flags{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0}
+#rl-monitor .rl-fuel-flags label{font-size:14px}
+#rl-monitor #rl-fuel-status{margin:10px 0;padding:12px;border-radius:7px;background:#244636;color:#c2f3d6;white-space:pre-line;line-height:1.5}
+#rl-monitor #rl-fuel-status.warn{background:#5c3035;color:#ffe1e4}
+#rl-monitor #rl-fuel-chart{width:100%;height:220px}
+#rl-monitor .rl-fuel-legend{color:#b9cbd8;font-size:12px;margin:7px 0 0}
+#rl-monitor .rl-drawdown{margin:15px 0;padding:14px;background:#102c3d;border:1px solid #44718a;border-radius:9px}
+#rl-monitor .rl-drawdown h3{margin-bottom:6px}
+#rl-monitor .rl-drawdown .rl-row{margin-bottom:4px}
+#rl-monitor #rl-drain-state{font-weight:600;color:#addff5}
+#rl-monitor .rl-tank-caption{margin-top:9px;text-align:center;font-size:13px;color:#c8dce9}
+</style>
+
+<section id="rl-monitor" aria-label="RocketLab telemetry development panel">
+  <h2>🚀 ROCKETLAB · INSTRUMENTATION & TELEMETRY</h2>
+  <p class="rl-note">SIMULATED DATA ONLY · Educational monitoring and diagnostic UI, not flight-qualified controls, real engine limits, or physical sensor data. Engine start remains locked.</p>
+  <div id="rl-scan" class="rl-banner" role="status">INSTRUMENT CHECK NOT RUN · START LOCKED</div>
+  <div class="rl-row">
+    <button id="rl-play" type="button">Pause telemetry</button>
+    <button id="rl-scan-btn" type="button">Run instrument scan</button>
+    <button id="rl-reset" type="button">Reset demo</button>
+    <button id="rl-export" type="button">Export CSV</button>
+    <label>Dashboard font
+      <select id="rl-font-select" aria-label="Choose dashboard font">
+        <option value="Segoe UI">Segoe UI</option>
+        <option value="Arial">Arial</option>
+        <option value="Verdana">Verdana</option>
+        <option value="Consolas">Consolas</option>
+        <option value="Georgia">Georgia</option>
+      </select>
+    </label>
+    <span class="rl-note" id="rl-count"></span>
+  </div>
+  <!-- Uses the SAME sensor records as the instrument explorer and CSV logger above. -->
+  <div class="rl-box" id="rl-fuel-station">
+    <h3>❄️ Propellant tanks · fuel analysis & inventory</h3>
+    <p class="rl-note">LH₂ = liquid hydrogen (fuel). LOX = liquid oxygen (oxidizer). Tank conditions and purity tests below are independent, invented classroom inputs. Actual composition/phase requires qualified analysis; this panel does not authorize operation.</p>
+    <div class="rl-fuel-grid">
+      <div class="rl-tank">
+        <h3>LH₂ · Fuel tank</h3>
+        <div class="rl-tank-head">
+          <div class="rl-tank-assembly" aria-label="Hydrogen tank visual level">
+            <div class="rl-tank-inlet" aria-hidden="true"></div>
+            <div class="rl-tank-vessel" aria-hidden="true">
+              <div class="rl-tank-liquid" id="rl-lh2-fill"></div>
+              <span class="rl-tank-percent" id="rl-lh2-pct">85%</span>
+            </div>
+            <div class="rl-tank-outlet" aria-hidden="true"></div>
+            <div class="rl-tank-caption">LH₂ · SIMULATED VOLUME</div>
+          </div>
+          <div class="rl-tank-stats">
+            <div><small>TT-101 · Temperature</small><strong id="rl-lh2-temp">—</strong></div>
+            <div><small>PT-101 · Pressure</small><strong id="rl-lh2-pressure">—</strong></div>
+            <div><small>LT-101 · Tank level</small><strong id="rl-lh2-level">—</strong></div>
+            <div><small>QT-101 · Lab purity input</small><strong id="rl-lh2-purity">—</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="rl-tank">
+        <h3>LOX · Oxidizer tank</h3>
+        <div class="rl-tank-head">
+          <div class="rl-tank-assembly" aria-label="Oxygen tank visual level">
+            <div class="rl-tank-inlet" aria-hidden="true"></div>
+            <div class="rl-tank-vessel" aria-hidden="true">
+              <div class="rl-tank-liquid" id="rl-lox-fill"></div>
+              <span class="rl-tank-percent" id="rl-lox-pct">83%</span>
+            </div>
+            <div class="rl-tank-outlet" aria-hidden="true"></div>
+            <div class="rl-tank-caption">LOX · SIMULATED VOLUME</div>
+          </div>
+          <div class="rl-tank-stats">
+            <div><small>TT-102 · Temperature</small><strong id="rl-lox-temp">—</strong></div>
+            <div><small>PT-102 · Pressure</small><strong id="rl-lox-pressure">—</strong></div>
+            <div><small>LT-102 · Tank level</small><strong id="rl-lox-level">—</strong></div>
+            <div><small>QT-102 · Lab purity input</small><strong id="rl-lox-purity">—</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rl-drawdown">
+      <h3>⬇️ Visual tank drawdown demo</h3>
+      <p class="rl-note">Watch BOTH illustrated tanks empty gradually while LT-101/LT-102 and the level graph update together. No engine start, actual valve command, or real fuel flow occurs. Rates are invented for demonstration.</p>
+      <div class="rl-row">
+        <button id="rl-drain-toggle" type="button">▶ Start simulated drawdown</button>
+        <button id="rl-tanks-refill" type="button">↻ Refill demo tanks</button>
+        <label>Drawdown speed
+          <select id="rl-drain-speed">
+            <option value="0.5">Slow · 0.5% / second</option>
+            <option value="1.5" selected>Medium · 1.5% / second</option>
+            <option value="4">Fast · 4% / second</option>
+          </select>
+        </label>
+        <span id="rl-drain-state" role="status">Stopped · engine locked</span>
+      </div>
+    </div>
+    <h3 style="margin-top:17px">Training controls · change simulated tank conditions</h3>
+    <div class="rl-fuel-controls" id="rl-fuel-controls"></div>
+    <div class="rl-fuel-flags">
+      <label><input type="checkbox" id="rl-h2-leak"> Inject simulated hydrogen detector alarm (GD-101)</label>
+      <label><input type="checkbox" id="rl-o2-leak"> Inject simulated oxygen enrichment alarm (GD-102)</label>
+    </div>
+    <div id="rl-fuel-status" role="status" aria-live="polite">TANK CONDITIONS NOT YET SAMPLED · START LOCKED</div>
+    <div class="rl-row">
+      <label>Tank trend graph
+        <select id="rl-fuel-graph-mode">
+          <option value="level">Tank levels (%)</option>
+          <option value="temp">Tank temperatures (°C)</option>
+          <option value="pressure">Tank pressures (bar)</option>
+          <option value="purity">Lab purity inputs (%)</option>
+        </select>
+      </label>
+    </div>
+    <canvas id="rl-fuel-chart" aria-label="Recent simulated hydrogen and oxygen tank readings"></canvas>
+    <p class="rl-fuel-legend">Blue = hydrogen fuel · Orange = liquid oxygen oxidizer · Last 70 samples · Simulation data, not real instruments.</p>
+  </div>
+  <div class="rl-box">
+    <h3>Sensor explorer</h3>
+    <div class="rl-row">
+      <label>System <select id="rl-system"><option value="ALL">All systems</option></select></label>
+      <label>Search <input id="rl-search" type="search" placeholder="Tag or sensor name" /></label>
+    </div>
+    <div id="rl-cards" class="rl-cards"></div>
+  </div>
+  <div class="rl-box">
+    <h3>Signal diagnostics & test injection</h3>
+    <p class="rl-note">Selected tag: <strong id="rl-selected">—</strong>. These controls alter fictional sensor signals, NOT actual valves, pumps, or motors.</p>
+    <div class="rl-row">
+      <label>Injected condition
+        <select id="rl-fault">
+          <option value="normal">Normal</option>
+          <option value="open">Open circuit / lost signal</option>
+          <option value="stuck">Frozen reading</option>
+          <option value="bias">Calibration offset</option>
+          <option value="noise">Electrical noise</option>
+        </select>
+      </label>
+      <label>Demo signal offset <input id="rl-offset" type="range" min="-100" max="100" value="0" step="5" />
+      <output id="rl-offset-label">0%</output></label>
+      <button id="rl-apply" type="button">Apply to selected tag</button>
+      <button id="rl-clear" type="button">Clear selected fault</button>
+    </div>
+  </div>
+  <div class="rl-box">
+    <h3>Live training graphs</h3>
+    <div class="rl-chart-grid">
+      <div><p id="rl-trend-label" class="rl-note">Selected tag trend</p><canvas id="rl-trend" aria-label="Selected sensor historical trend"></canvas></div>
+      <div><p class="rl-note">Synthetic bearing vibration waveform (not measured)</p><canvas id="rl-wave" aria-label="Synthetic vibration waveform"></canvas></div>
+      <div><p class="rl-note">Synthetic vibration frequency spectrum (not a real bearing diagnosis)</p><canvas id="rl-spectrum" aria-label="Synthetic vibration spectrum"></canvas></div>
+    </div>
+  </div>
+  <div class="rl-box"><h3>Alarm & event history</h3><div class="rl-note" id="rl-events">No events yet.</div></div>
+</section>
+
+<script>
+(() => {
+  "use strict";
+  const root = document.getElementById("rl-monitor");
+  if (!root || root.dataset.ready) return;
+  root.dataset.ready = "yes";
+  const $ = id => root.querySelector("#" + id);
+  // If the older preflight add-on is present, hide its duplicate panel.
+  const olderPanel=document.getElementById("preflightPanel");
+  if(olderPanel) olderPanel.hidden=true;
+
+  // Sensor definitions: [tag, label, system, resting demo value, units, demo variation].
+  // These are invented classroom values, NOT actual rocket operating ranges.
+  const D = [
+    ["TT-101","Hydrogen tank temperature","Cryogenics",-253,"°C",0.2],
+    ["TT-102","Oxygen tank temperature","Cryogenics",-183,"°C",0.2],
+    ["PT-101","Fuel tank pressure","Cryogenics",2.2,"bar",0.08],
+    ["PT-102","Oxidizer tank pressure","Cryogenics",2.4,"bar",0.08],
+    ["LT-101","Fuel tank level","Cryogenics",85,"%",0.4],
+    ["LT-102","Oxidizer tank level","Cryogenics",83,"%",0.4],
+    ["TT-103","Tank insulation temperature","Cryogenics",19,"°C",0.3],
+    ["GD-101","Hydrogen leak detector","Cryogenics",0,"demo ppm",1],
+    ["GD-102","Oxygen enrichment monitor","Cryogenics",20.9,"% O2",0.08],
+    ["QT-101","Hydrogen lab purity input","Cryogenics",99.9,"% assay",0.02],
+    ["QT-102","Oxygen lab purity input","Cryogenics",99.9,"% assay",0.02],
+    ["PT-201","Fuel pump inlet pressure","Propulsion",7,"bar",0.15],
+    ["PT-202","Fuel pump outlet pressure","Propulsion",0,"bar",0.1],
+    ["PT-203","Oxidizer pump inlet pressure","Propulsion",8,"bar",0.15],
+    ["PT-204","Oxidizer pump outlet pressure","Propulsion",0,"bar",0.1],
+    ["ST-201","Fuel turbopump speed","Propulsion",0,"RPM",20],
+    ["ST-202","Oxidizer turbopump speed","Propulsion",0,"RPM",20],
+    ["FT-201","Fuel mass flow","Propulsion",0,"kg/s",0.1],
+    ["FT-202","Oxidizer mass flow","Propulsion",0,"kg/s",0.1],
+    ["PT-205","Combustion chamber pressure","Propulsion",0,"bar",0.1],
+    ["TT-205","Engine wall temperature","Propulsion",25,"°C",0.3],
+    ["TT-301","Fuel bearing temperature","Rotating machinery",27,"°C",0.4],
+    ["TT-302","Oxidizer bearing temperature","Rotating machinery",28,"°C",0.4],
+    ["VT-301","Fuel bearing vibration","Rotating machinery",0.2,"mm/s",0.04],
+    ["VT-302","Oxidizer bearing vibration","Rotating machinery",0.2,"mm/s",0.04],
+    ["AX-301","Fuel shaft axial position","Rotating machinery",0,"mm",0.02],
+    ["AX-302","Oxidizer shaft axial position","Rotating machinery",0,"mm",0.02],
+    ["TT-303","Bearing housing temperature","Rotating machinery",28,"°C",0.5],
+    ["PT-401","Hydraulic supply pressure","Hydraulics",180,"demo bar",2],
+    ["PT-402","Hydraulic return pressure","Hydraulics",3,"demo bar",0.2],
+    ["TT-401","Hydraulic oil temperature","Hydraulics",31,"°C",0.5],
+    ["LT-401","Hydraulic reservoir level","Hydraulics",75,"%",0.4],
+    ["PS-501","Control supply voltage","Electrical",24,"VDC",0.2],
+    ["PS-502","Redundant supply voltage","Electrical",24,"VDC",0.2],
+    ["CT-501","Controller current","Electrical",1.8,"A",0.08],
+    ["COM-501","Telemetry link health","Electrical",100,"%",0.5],
+    ["TT-601","Avionics bay temperature","Flight systems",26,"°C",0.4],
+    ["ACC-601","Longitudinal acceleration","Flight systems",0,"m/s²",0.1],
+    ["GY-601","Pitch rate","Flight systems",0,"°/s",0.05],
+    ["GY-602","Yaw rate","Flight systems",0,"°/s",0.05],
+    ["GY-603","Roll rate","Flight systems",0,"°/s",0.05],
+    ["POS-601","Actuator feedback position","Flight systems",0,"%",0.5],
+    ["SG-701","Structure strain","Structures",0,"µε",1],
+    ["ACC-701","Structure acceleration","Structures",0,"m/s²",0.1],
+    ["TT-701","Structure temperature","Structures",22,"°C",0.4],
+    ["WT-801","Ambient wind speed","Environment",2,"m/s",0.3],
+    ["TT-801","Ambient temperature","Environment",18,"°C",0.3],
+    ["RH-801","Ambient humidity","Environment",48,"%",0.5]
+  ];
+  const sensors = D.map(([tag,name,system,base,unit,span]) => ({
+    tag,name,system,base,unit,span, value:base, fault:"normal", offset:0,
+    history:[], status:"OK", frozen:null
+  }));
+  const byTag = Object.fromEntries(sensors.map(s => [s.tag,s]));
+  const systems = [...new Set(sensors.map(s => s.system))];
+  systems.forEach(system => {
+    const o = document.createElement("option"); o.value=system; o.textContent=system; $("rl-system").append(o);
+  });
+  let selected = sensors[0], running = true, t = 0, eventRows = [], samples = [];
+  let drawdownActive = false;
+  const tankTags = ["LT-101", "LT-102"];
+  const DRAW_STEP_SECONDS = 0.5; // The sample timer below fires every 500 ms.
+  function setDrawdownState(active, reason) {
+    drawdownActive = active;
+    $("rl-drain-toggle").textContent = active ? "❚❚ Stop simulated drawdown" : "▶ Start simulated drawdown";
+    $("rl-drain-state").textContent = reason || (active ? "Draining demo tanks · engine locked" : "Stopped · engine locked");
+  }
+  function moveTankLevels() {
+    if (!drawdownActive) return;
+    const rate = Number($("rl-drain-speed").value);
+    let hasInventory = false;
+    for (const tag of tankTags) {
+      const control = fuelControlByTag[tag];
+      const next = Math.max(0, Number((Number(control.slider.value) - rate * DRAW_STEP_SECONDS).toFixed(1)));
+      control.slider.value = String(next);
+      control.output.textContent = Number(control.slider.value).toFixed(1) + " %";
+      byTag[tag].base = Number(control.slider.value);
+      if (byTag[tag].base > 0) hasInventory = true;
+    }
+    if (!hasInventory) {
+      setDrawdownState(false, "Both tanks empty · reset to repeat");
+      event("Demonstration tanks empty; virtual drawdown stopped");
+    }
+  }
+  const MAX_POINTS = 140;
+  // Tank-station sliders update the EXISTING sensor sources rather than
+  // creating duplicate readings. They are operator-entered training values.
+  const fuelInputs = [
+    ["TT-101","LH₂ temperature","°C",-260,-245,-253,0.5],
+    ["PT-101","LH₂ tank pressure","bar",0,6,2.2,0.1],
+    ["LT-101","LH₂ fill level","%",0,100,85,0.1],
+    ["QT-101","LH₂ lab purity input","%",90,100,99.9,0.1],
+    ["TT-102","LOX temperature","°C",-195,-170,-183,0.5],
+    ["PT-102","LOX tank pressure","bar",0,6,2.4,0.1],
+    ["LT-102","LOX fill level","%",0,100,83,0.1],
+    ["QT-102","LOX lab purity input","%",90,100,99.9,0.1]
+  ];
+  const fuelControlByTag = {};
+  for (const [tag, label, unit, min, max, initial, step] of fuelInputs) {
+    const wrap=document.createElement("label");
+    const name=document.createElement("span");name.textContent=tag+" · "+label+" ";
+    const output=document.createElement("output");output.textContent=initial+" "+unit;
+    const slider=document.createElement("input");slider.type="range";
+    slider.min=min;slider.max=max;slider.step=step;slider.value=initial;
+    slider.setAttribute("aria-label",label);
+    slider.addEventListener("input",()=>{
+      output.textContent=slider.value+" "+unit;
+      byTag[tag].base=Number(slider.value);
+      sample(true);
+    });
+    wrap.append(name,output,slider);$("rl-fuel-controls").append(wrap);
+    fuelControlByTag[tag]={slider,output,initial,unit};
+  }
+  let previousFuelCondition="";
+  function fuelAudit() {
+    // All limits are FICTIONAL test bands for exercises, not real limits.
+    const n=tag=>byTag[tag].value;
+    const issues=[];
+    const check=(tag,predicate,description)=>{
+      if(!Number.isFinite(n(tag))) issues.push(tag+": SENSOR DATA INVALID");
+      else if(!predicate(n(tag))) issues.push(tag+": "+description);
+    };
+    check("TT-101",v=>v>=-256 && v<=-251,"fuel temperature demo band exceeded");
+    check("TT-102",v=>v>=-187 && v<=-179,"oxidizer temperature demo band exceeded");
+    check("PT-101",v=>v>=1 && v<=4,"fuel pressure demo band exceeded");
+    check("PT-102",v=>v>=1 && v<=4,"oxidizer pressure demo band exceeded");
+    check("LT-101",v=>v>=15,"fuel inventory demo minimum not met");
+    check("LT-102",v=>v>=15,"oxidizer inventory demo minimum not met");
+    check("QT-101",v=>v>=98,"fuel lab purity demo target not met");
+    check("QT-102",v=>v>=98,"oxidizer lab purity demo target not met");
+    check("GD-101",v=>v<100,"hydrogen detector demo alert");
+    check("GD-102",v=>v<23,"oxygen enrichment demo alert");
+    return issues;
+  }
+  function renderFuel() {
+    const readings=[
+      ["TT-101","rl-lh2-temp"],["PT-101","rl-lh2-pressure"],
+      ["LT-101","rl-lh2-level"],["QT-101","rl-lh2-purity"],
+      ["TT-102","rl-lox-temp"],["PT-102","rl-lox-pressure"],
+      ["LT-102","rl-lox-level"],["QT-102","rl-lox-purity"]
+    ];
+    for(const [tag,id] of readings) $(id).textContent=fmt(byTag[tag],byTag[tag].value);
+    const level=tag=>Number.isFinite(byTag[tag].value)?Math.max(0,Math.min(100,byTag[tag].value)):0;
+    $("rl-lh2-fill").style.height=level("LT-101")+"%";
+    $("rl-lox-fill").style.height=level("LT-102")+"%";
+    $("rl-lh2-pct").textContent=level("LT-101").toFixed(1)+"%";
+    $("rl-lox-pct").textContent=level("LT-102").toFixed(1)+"%";
+    const issues=fuelAudit(),banner=$("rl-fuel-status");
+    banner.classList.toggle("warn",issues.length>0);
+    banner.textContent=issues.length
+      ? "REVIEW REQUIRED · "+issues.length+" DEMONSTRATION ALERT(S) · START LOCKED\n"+issues.join("\n")
+      : "TRAINING TANK CHECKS NORMAL · START STILL LOCKED";
+    const condition=issues.join("|");
+    if(condition!==previousFuelCondition){
+      if(previousFuelCondition!=="") event(issues.length?"Fuel station alerts changed: "+issues.length+" active":"Fuel station demo conditions normal");
+      previousFuelCondition=condition;
+    }
+  }
+  function drawFuelGraph() {
+    const metrics={
+      level:["LT-101","LT-102","Tank level (%)"],
+      temp:["TT-101","TT-102","Tank temperature (°C)"],
+      pressure:["PT-101","PT-102","Tank pressure (bar)"],
+      purity:["QT-101","QT-102","Lab purity input (%)"]
+    };
+    const [a,b,title]=metrics[$("rl-fuel-graph-mode").value];
+    const {ctx,width:w,height:h}=canvasCtx("rl-fuel-chart");
+    const left=52,right=w-13,top=23,bottom=h-29;
+    ctx.font="12px Arial";ctx.fillStyle="#b4cad9";ctx.fillText(title,13,14);
+    const A=byTag[a].history.slice(-70).map(p=>p.value);
+    const B=byTag[b].history.slice(-70).map(p=>p.value);
+    const all=[...A,...B].filter(Number.isFinite);
+    if(!all.length){ctx.fillText("No samples",70,h/2);return;}
+    let mn=Math.min(...all),mx=Math.max(...all);let pad=Math.max(.15,(mx-mn)*.12);mn-=pad;mx+=pad;
+    ctx.strokeStyle="#365066";ctx.lineWidth=1;
+    for(let i=0;i<=4;i++){
+      let y=top+(bottom-top)*i/4;
+      ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();
+      ctx.fillStyle="#9fb7c9";ctx.fillText((mx-(mx-mn)*i/4).toFixed(1),3,y+4);
+    }
+    ctx.fillText("Earlier",left,h-8);ctx.fillText("Recent",right-42,h-8);
+    const line=(arr,color)=>{
+      ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();let active=false;
+      arr.forEach((v,i)=>{
+        if(!Number.isFinite(v)){active=false;return;}
+        const x=left+(right-left)*i/Math.max(1,arr.length-1);
+        const y=bottom-(bottom-top)*(v-mn)/(mx-mn);
+        if(!active){ctx.moveTo(x,y);active=true;}else ctx.lineTo(x,y);
+      });ctx.stroke();
+    };
+    line(A,"#69d7fa");line(B,"#ffbd71");
+  }
+
+  const fmt = (s,n) => n === null ? "NO SIGNAL" : (Math.abs(n) >= 1000 ? n.toFixed(0) : n.toFixed(Math.abs(n)<10 ? 2 : 1)) + " " + s.unit;
+
+  function event(message) {
+    eventRows.unshift(new Date().toLocaleTimeString() + " — " + message);
+    eventRows=eventRows.slice(0,35);
+    $("rl-events").textContent=eventRows.join("\n");
+    $("rl-events").style.whiteSpace="pre-line";
+  }
+  function select(s) {
+    selected=s;
+    $("rl-selected").textContent=s.tag + " · " + s.name;
+    $("rl-fault").value=s.fault;
+    $("rl-offset").value=s.offset;
+    $("rl-offset-label").textContent=s.offset + "%";
+    renderCards(); drawAll();
+  }
+  function renderCards() {
+    const q=$("rl-search").value.toLowerCase().trim(), system=$("rl-system").value;
+    const list=sensors.filter(s => (system==="ALL" || s.system===system) && (s.tag.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)));
+    const host=$("rl-cards"); host.replaceChildren();
+    for (const s of list) {
+      const btn=document.createElement("button"); btn.type="button"; btn.className="rl-card";
+      btn.setAttribute("aria-pressed",String(s===selected));
+      const tag=document.createElement("div"); tag.className="rl-tag"; tag.textContent=s.tag;
+      const name=document.createElement("div"); name.className="rl-name"; name.textContent=s.name;
+      const val=document.createElement("div"); val.className="rl-reading"; val.textContent=fmt(s,s.value);
+      const state=document.createElement("span"); state.className="rl-pill"+(s.status==="OK"?"":s.status==="CHECK"?" warn":" bad"); state.textContent=s.status;
+      btn.append(tag,name,val,state); btn.addEventListener("click",()=>select(s)); host.append(btn);
+    }
+    $("rl-count").textContent=list.length + " / " + sensors.length + " tags";
+  }
+
+  // Fake data: varies around an offline baseline. Faults deliberately corrupt
+  // the selected channel to demonstrate alarm and signal-quality handling.
+  function sample(force=false) {
+    if (!running && !force) return;
+    if (!force) moveTankLevels();
+    t++;
+    byTag["GD-101"].base=$("rl-h2-leak").checked?500:0;
+    byTag["GD-102"].base=$("rl-o2-leak").checked?25:20.9;
+    for (const s of sensors) {
+      const prev=s.status;
+      // Inventory tags follow our simulated tank contents exactly, without fake oscillation.
+      // Other sensor channels retain their original educational noise/variation.
+      const isTankLevel = tankTags.includes(s.tag);
+      let n = isTankLevel ? s.base : s.base + Math.sin(t/11 + sensors.indexOf(s)*.75)*s.span*.35 + (Math.random()-.5)*s.span*.13;
+      if (s.base===0 && (s.unit==="RPM" || s.unit==="kg/s" || s.tag==="PT-205")) n=0;
+      n += s.span*5*(s.offset/100);
+      if (s.fault==="bias") n+=s.span*6;
+      if (s.fault==="noise") n+=(Math.random()-.5)*s.span*14;
+      if (s.fault==="stuck") {
+        if (s.frozen===null) s.frozen=s.value;
+        n=s.frozen;
+      } else s.frozen=null;
+      if (s.fault==="open") n=null;
+      if (n!==null && (s.unit==="RPM" || s.unit==="kg/s" || s.unit==="mm/s" || s.unit==="bar" || s.unit==="demo bar" || s.unit==="demo ppm")) n=Math.max(0,n);
+      if(n!==null && isTankLevel) n=Math.max(0,Math.min(100,n));
+      s.value=n;
+      s.status = n===null ? "BAD SIGNAL" : s.fault==="stuck" ? "CHECK" : Math.abs(n-s.base)>s.span*3 ? "SIM WARN" : "OK";
+      if (s.status!==prev && s.status!=="OK") event(s.tag+" · "+s.status);
+      s.history.push({t,value:n}); if(s.history.length>MAX_POINTS)s.history.shift();
+    }
+    const row={time:new Date().toISOString()}; sensors.forEach(s=>row[s.tag]=s.value); samples.push(row);
+    if(samples.length>MAX_POINTS)samples.shift();
+    renderCards(); renderFuel(); drawAll();
+  }
+
+  function canvasCtx(id) {
+    const c=$(id), width=Math.max(200,c.clientWidth), height=190, dpr=Math.min(2,window.devicePixelRatio||1);
+    c.width=Math.round(width*dpr); c.height=Math.round(height*dpr);
+    const ctx=c.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,width,height); return {ctx,width,height};
+  }
+  function plot(id, points, title, units) {
+    const {ctx,width:w,height:h}=canvasCtx(id);
+    const x0=42,y0=12,x1=w-10,y1=h-28;
+    ctx.font="11px Arial";ctx.fillStyle="#b2c6d3";ctx.fillText(title,12,12);
+    ctx.strokeStyle="#355166";ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0,y1);ctx.lineTo(x1,y1);ctx.stroke();
+    const good=points.filter(v => Number.isFinite(v));
+    if(good.length<2){ctx.fillText("No valid data yet",w/2-45,h/2);return;}
+    let mn=Math.min(...good),mx=Math.max(...good);if(mx===mn){mx+=1;mn-=1;}
+    let pad=(mx-mn)*.12;mn-=pad;mx+=pad;
+    ctx.fillStyle="#a2c1d5";ctx.fillText(mx.toFixed(1),3,24);ctx.fillText(mn.toFixed(1),3,y1);
+    ctx.fillText(units,x0+5,h-9);
+    ctx.strokeStyle="#75d6ff";ctx.lineWidth=1.7;ctx.beginPath(); let drawing=false;
+    points.forEach((v,i)=>{ if(!Number.isFinite(v)){drawing=false;return;}
+      const x=x0+i/Math.max(1,points.length-1)*(x1-x0),y=y1-(v-mn)/(mx-mn)*(y1-y0);
+      if(!drawing){ctx.moveTo(x,y);drawing=true;}else ctx.lineTo(x,y);
+    });ctx.stroke();
+  }
+  function vibrationWave() {
+    const a=[],N=128,fs=64;
+    for(let i=0;i<N;i++){
+      const sec=i/fs;
+      a.push(.7*Math.sin(2*Math.PI*5*sec+t*.2)+.3*Math.sin(2*Math.PI*13*sec+t*.11)+.07*Math.sin(i*7.43+t));
+    }
+    return {a,N,fs};
+  }
+  function spectrum(wave) {
+    const {a,N,fs}=wave, out=[];
+    for(let k=0;k<N/2;k++){
+      let re=0,im=0;
+      for(let i=0;i<N;i++){const p=2*Math.PI*k*i/N;re+=a[i]*Math.cos(p);im-=a[i]*Math.sin(p);}
+      out.push(2*Math.hypot(re,im)/N);
+    }
+    return out;
+  }
+  function drawAll(){
+    $("rl-trend-label").textContent=selected.tag+" · "+selected.name+" · "+selected.unit;
+    plot("rl-trend",selected.history.map(p=>p.value),"Recent samples",selected.unit);
+    const wave=vibrationWave();plot("rl-wave",wave.a,"Vibration amplitude (fictional)","time →");
+    plot("rl-spectrum",spectrum(wave),"Frequency bins (0–32 demo Hz)","frequency →");
+    drawFuelGraph();
+  }
+  // Customize the panel font without editing HTML manually.
+  $("rl-font-select").addEventListener("change", () => {
+    const font = $("rl-font-select").value;
+    const families = {
+      "Segoe UI": "'Segoe UI', Arial, sans-serif",
+      Arial: "Arial, sans-serif",
+      Verdana: "Verdana, sans-serif",
+      Consolas: "Consolas, 'Courier New', monospace",
+      Georgia: "Georgia, serif"
+    };
+    root.style.fontFamily = families[font] || families["Segoe UI"];
+    drawAll();
+  });
+  $("rl-drain-toggle").addEventListener("click", () => {
+    if (drawdownActive) {
+      setDrawdownState(false);
+      event("Virtual tank drawdown paused");
+      return;
+    }
+    if (tankTags.every(tag => byTag[tag].base <= 0)) {
+      setDrawdownState(false,"Tanks empty · click Refill demo tanks");
+      return;
+    }
+    if (!running) {
+      setDrawdownState(false,"Telemetry paused · resume telemetry first");
+      return;
+    }
+    setDrawdownState(true);
+    event("Virtual tank drawdown started; no engine operation");
+  });
+  $("rl-tanks-refill").addEventListener("click", () => {
+    setDrawdownState(false,"Demo tanks refilled · engine locked");
+    for (const tag of tankTags) {
+      const control = fuelControlByTag[tag];
+      control.slider.value = control.initial;
+      control.output.textContent = control.initial + " %";
+      byTag[tag].base = control.initial;
+    }
+    sample(true);
+    event("Demo tank levels reset");
+  });
+  $("rl-fuel-graph-mode").addEventListener("change",drawFuelGraph);
+  $("rl-h2-leak").addEventListener("change",()=>sample(true));
+  $("rl-o2-leak").addEventListener("change",()=>sample(true));
+  $("rl-system").addEventListener("change",renderCards);
+  $("rl-search").addEventListener("input",renderCards);
+  $("rl-offset").addEventListener("input",()=>$("rl-offset-label").textContent=$("rl-offset").value+"%");
+  $("rl-apply").addEventListener("click",()=>{
+    selected.fault=$("rl-fault").value;selected.offset=Number($("rl-offset").value);
+    selected.frozen=null;event("INJECTED "+selected.tag+" · "+selected.fault+" · offset "+selected.offset+"%");sample();
+  });
+  $("rl-clear").addEventListener("click",()=>{selected.fault="normal";selected.offset=0;selected.frozen=null;select(selected);event("CLEARED "+selected.tag);sample();});
+  $("rl-play").addEventListener("click",()=>{
+    running=!running;
+    $("rl-play").textContent=running?"Pause telemetry":"Resume telemetry";
+    if(!running && drawdownActive) setDrawdownState(false,"Telemetry paused · drawdown stopped");
+    event(running?"Telemetry resumed":"Telemetry paused");
+  });
+  $("rl-scan-btn").addEventListener("click",()=>{
+    const errors=sensors.filter(s=>s.status!=="OK");
+    $("rl-scan").textContent=errors.length?"DEMO SENSOR CHECK: "+errors.length+" CHANNEL(S) NEED REVIEW · START LOCKED":"DEMO SENSOR CHECK COMPLETE · START STILL LOCKED";
+    event("Instrument scan: "+errors.length+" channel(s) flagged");
+  });
+  $("rl-reset").addEventListener("click",()=>{
+    setDrawdownState(false,"Stopped · engine locked");
+    for (const [tag,ctrl] of Object.entries(fuelControlByTag)) {
+      ctrl.slider.value=ctrl.initial;
+      ctrl.output.textContent=ctrl.initial+" "+ctrl.unit;
+      byTag[tag].base=ctrl.initial;
+    }
+    $("rl-h2-leak").checked=false;$("rl-o2-leak").checked=false;
+    byTag["GD-101"].base=0;byTag["GD-102"].base=20.9;
+    previousFuelCondition="";
+    sensors.forEach(s=>{s.fault="normal";s.offset=0;s.frozen=null;s.value=s.base;s.status="OK";s.history=[];});
+    t=0;samples=[];eventRows=[];$("rl-events").textContent="No events yet.";
+    $("rl-scan").textContent="INSTRUMENT CHECK NOT RUN · START LOCKED";select(sensors[0]);sample();
+  });
+  $("rl-export").addEventListener("click",()=>{
+    if(!samples.length){event("No samples to export");return;}
+    const header=["time",...sensors.map(s=>s.tag)];
+    const csv=[header.join(","),...samples.map(row=>header.map(key=>row[key]??"").join(","))].join("\r\n");
+    const url=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    const a=document.createElement("a");a.href=url;a.download="rocketlab_demo_telemetry.csv";a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  });
+  window.addEventListener("resize",drawAll);
+
+  // Prevent the original demo START button from initiating a mock launch.
+  document.querySelectorAll('button[onclick*="startEngine"]').forEach(b=>{
+    b.disabled=true;b.title="RocketLab engine start disabled during instrumentation development";
+  });
+  window.startEngine=function(){event("Engine start requested but locked for instrumentation development");};
+  try { if (typeof engineRunning !== "undefined") engineRunning=false; } catch(e) {}
+  const oldStatus=document.getElementById("engineStatus");
+  if(oldStatus) oldStatus.textContent="Engine Status: PREFLIGHT / START LOCKED";
+  select(selected);sample();setInterval(sample,500);
+})();
+</script>
+<!-- END ROCKETLAB MONITORING ADD-ON V3 -->
