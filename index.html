@@ -1045,8 +1045,7 @@ rpm = Math.max(0, rpm);
     }
 
 </script>
-<!-- ROCKETLAB MONITORING ADD-ON: paste immediately BEFORE </body> in your existing index.html -->
-<!-- ROCKETLAB MONITORING V3: VISUAL TANK DRAWDOWN + FONT CONTROL. REPLACE THE PREVIOUS V2 MONITORING ADD-ON WITH THIS ENTIRE BLOCK. -->
+<!-- ROCKETLAB MONITORING V4: VISUAL TANKS + SENSOR GRAPHS + INTERLOCKED TEST-SIMULATION HMI. REPLACE V3 ENTIRELY WITH THIS BLOCK. -->
 <style>
 #rl-monitor {color:#e6f2fb;background:#111e2c;border:2px solid #2d5875;border-radius:14px;padding:20px;margin:28px 0;font-family:'Segoe UI',Arial,sans-serif}
 #rl-monitor * {box-sizing:border-box}
@@ -1111,6 +1110,36 @@ rpm = Math.max(0, rpm);
 #rl-monitor .rl-drawdown .rl-row{margin-bottom:4px}
 #rl-monitor #rl-drain-state{font-weight:600;color:#addff5}
 #rl-monitor .rl-tank-caption{margin-top:9px;text-align:center;font-size:13px;color:#c8dce9}
+
+/* V4 — browser-only sequence-control training HMI. NOT a real safety interlock. */
+#rl-monitor .rl-hmi{border:2px solid #67b6d4;background:linear-gradient(160deg,#102d3d,#111e2c);padding:19px;border-radius:12px;margin-top:16px}
+#rl-monitor .rl-hmi-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+#rl-monitor .rl-hmi-badge{font-size:13px;font-weight:700;padding:9px 13px;border-radius:6px;background:#604b25;color:#ffedba}
+#rl-monitor .rl-hmi-badge.ready{background:#1f4936;color:#b5ffd3}
+#rl-monitor .rl-hmi-badge.bad{background:#622d32;color:#ffd3d3}
+#rl-monitor .rl-sequence{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,265px),1fr));gap:10px;margin:15px 0}
+#rl-monitor .rl-seq-step{background:#192e41;border:1px solid #3a5871;border-radius:9px;padding:13px}
+#rl-monitor .rl-seq-step[data-state='passed']{border-color:#51ba8d}
+#rl-monitor .rl-seq-step[data-state='blocked']{border-color:#d96a70}
+#rl-monitor .rl-seq-title{font-weight:750;color:#e9f5ff;font-size:14px}
+#rl-monitor .rl-seq-detail{min-height:36px;color:#b7cddd;font-size:12px;margin:8px 0}
+#rl-monitor .rl-seq-state{font-size:12px;font-weight:bold;color:#f9d892}
+#rl-monitor .rl-seq-step[data-state='passed'] .rl-seq-state{color:#a9efc3}
+#rl-monitor .rl-seq-step[data-state='blocked'] .rl-seq-state{color:#ffb6bc}
+#rl-monitor .rl-seq-step button{width:100%;text-align:center;margin:8px 0 0}
+#rl-monitor .rl-hmi button:disabled{opacity:.42;cursor:not-allowed}
+#rl-monitor .rl-hmi-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:14px 0}
+#rl-monitor .rl-hmi-actions button{font-weight:750;margin:0;min-height:47px}
+#rl-monitor #rl-hmi-start{background:#187b5a;border:2px solid #6bdfac;color:#fff}
+#rl-monitor #rl-hmi-stop{background:#693139;border:2px solid #ed8290;color:#fff}
+#rl-monitor #rl-hmi-reset{background:#3e536b;border:2px solid #a1b5c7;color:#fff}
+#rl-monitor #rl-hmi-mode{width:18px;height:18px}
+#rl-monitor .rl-hmi-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:12px 0}
+#rl-monitor .rl-hmi-metric{background:#0e1c2a;border:1px solid #36576c;border-radius:8px;padding:12px}
+#rl-monitor .rl-hmi-metric small{display:block;color:#adc6d6;margin-bottom:6px}
+#rl-monitor .rl-hmi-metric strong{font-size:23px;font-variant-numeric:tabular-nums}
+#rl-monitor #rl-hmi-graph{height:175px;width:100%;background:#0e1c2a;border:1px solid #34526a;border-radius:9px}
+#rl-monitor #rl-hmi-log{white-space:pre-line;font-size:12px;color:#b8d0e1;line-height:1.6;background:#0c1925;border:1px solid #30465c;padding:12px;border-radius:9px;min-height:64px}
 </style>
 
 <section id="rl-monitor" aria-label="RocketLab telemetry development panel">
@@ -1133,6 +1162,38 @@ rpm = Math.max(0, rpm);
     </label>
     <span class="rl-note" id="rl-count"></span>
   </div>
+
+  <!-- The virtual test HMI lives INSIDE the original RocketLab monitoring panel. -->
+  <div class="rl-hmi" id="rl-test-hmi" aria-label="Virtual test sequence control">
+    <div class="rl-hmi-top">
+      <div>
+        <h3>🧪 TEST-STAND HMI · ORDERED SIMULATION</h3>
+        <p class="rl-note">Readiness checks must pass IN ORDER before the virtual run is enabled. These are invented training criteria, not an actual rocket ignition sequence, safety PLC, or hardware interlock.</p>
+      </div>
+      <div class="rl-hmi-badge" id="rl-hmi-badge" role="status" aria-live="polite">START INTERLOCKED</div>
+    </div>
+    <label><input id="rl-hmi-mode" type="checkbox"> Confirm: I am operating a BROWSER-ONLY TRAINING SIMULATION (no real equipment)</label>
+    <div class="rl-sequence" id="rl-hmi-sequence">
+      <div class="rl-note">Loading simulated sequence checks…</div>
+    </div>
+    <div class="rl-hmi-actions">
+      <button id="rl-hmi-start" type="button" disabled>▶ START VIRTUAL TEST — INTERLOCKED</button>
+      <button id="rl-hmi-stop" type="button">■ STOP / ABORT DEMO</button>
+      <button id="rl-hmi-reset" type="button">↺ MASTER RESET</button>
+    </div>
+    <p class="rl-note"><strong>Master Reset:</strong> stops the virtual run and clears sequence/abort latches. It does <em>not</em> clear injected sensor faults, refill tanks, or bypass a failed check.</p>
+    <div class="rl-hmi-metrics">
+      <div class="rl-hmi-metric"><small>Virtual test state</small><strong id="rl-hmi-state">IDLE</strong></div>
+      <div class="rl-hmi-metric"><small>Simulated RPM</small><strong id="rl-hmi-rpm">0</strong></div>
+      <div class="rl-hmi-metric"><small>Elapsed test time</small><strong id="rl-hmi-time">0.0 s</strong></div>
+      <div class="rl-hmi-metric"><small>Sequence completed</small><strong id="rl-hmi-progress">0 / 6</strong></div>
+    </div>
+    <h3>Virtual shaft speed · trend graph</h3>
+    <canvas id="rl-hmi-graph" aria-label="Simulated rotational speed over the latest 30 seconds"></canvas>
+    <h3 style="margin-top:14px">Sequence event log</h3>
+    <div id="rl-hmi-log" role="log" aria-live="polite">Awaiting operator training checks.</div>
+  </div>
+
   <!-- Uses the SAME sensor records as the instrument explorer and CSV logger above. -->
   <div class="rl-box" id="rl-fuel-station">
     <h3>❄️ Propellant tanks · fuel analysis & inventory</h3>
@@ -1327,6 +1388,8 @@ rpm = Math.max(0, rpm);
   });
   let selected = sensors[0], running = true, t = 0, eventRows = [], samples = [];
   let drawdownActive = false;
+  const hmi = { completed: 0, active: false, aborted: false, time: 0, rpm: 0, history: [], messages: [] };
+
   const tankTags = ["LT-101", "LT-102"];
   const DRAW_STEP_SECONDS = 0.5; // The sample timer below fires every 500 ms.
   function setDrawdownState(active, reason) {
@@ -1500,6 +1563,16 @@ rpm = Math.max(0, rpm);
     t++;
     byTag["GD-101"].base=$("rl-h2-leak").checked?500:0;
     byTag["GD-102"].base=$("rl-o2-leak").checked?25:20.9;
+    // Virtual telemetry from the browser-only HMI, with fictional scale factors.
+    // Do NOT use these relationships to model or operate a real engine.
+    const demoOutputs = {
+      "ST-201": hmi.rpm,
+      "ST-202": hmi.rpm * 0.97,
+      "FT-201": hmi.active ? hmi.rpm / 3200 : 0,
+      "FT-202": hmi.active ? hmi.rpm / 1700 : 0,
+      "PT-205": hmi.active ? hmi.rpm / 1000 : 0
+    };
+    for (const [tag, value] of Object.entries(demoOutputs)) byTag[tag].base=value;
     for (const s of sensors) {
       const prev=s.status;
       // Inventory tags follow our simulated tank contents exactly, without fake oscillation.
@@ -1638,6 +1711,7 @@ rpm = Math.max(0, rpm);
     event("Instrument scan: "+errors.length+" channel(s) flagged");
   });
   $("rl-reset").addEventListener("click",()=>{
+    if(hmi.active) hmiStop("Monitoring-panel reset requested",true);
     setDrawdownState(false,"Stopped · engine locked");
     for (const [tag,ctrl] of Object.entries(fuelControlByTag)) {
       ctrl.slider.value=ctrl.initial;
@@ -1661,15 +1735,198 @@ rpm = Math.max(0, rpm);
   });
   window.addEventListener("resize",drawAll);
 
+
+  // ================================================================
+  // V4 SIMULATION-ONLY HMI — sequential operator checks + software gate.
+  // NO real hardware, actuators, ignition, or safety-rated controls.
+  // ================================================================
+  const legacyStart = (typeof window.startEngine === "function") ? window.startEngine : null;
+  const legacyStop = (typeof window.stopEngine === "function") ? window.stopEngine : null;
+  const HMI_STAGES = [
+    ["01", "Control power healthy", "Check simulated controller and backup supply readings."],
+    ["02", "Telemetry & sensor health", "Check link and every simulated sensor for injected signal faults."],
+    ["03", "Tank monitoring verified", "Check the current tank readings, purity inputs, and leak flags."],
+    ["04", "Hydraulics & bearings verified", "Check simulated hydraulic inventory and bearing signals."],
+    ["05", "Training mode confirmed", "Operator acknowledges this is software only."],
+    ["06", "Arm virtual test", "Complete the ordered preflight simulation." ]
+  ];
+  function hmiCheck(index) {
+    const val = tag => Number(byTag[tag]?.value);
+    const valid = tag => byTag[tag] && byTag[tag].fault === "normal" && byTag[tag].status === "OK" && Number.isFinite(val(tag));
+    if(index === 0) {
+      if(!valid("PS-501") || !valid("PS-502") || val("PS-501") < 22 || val("PS-501") > 26 || val("PS-502") < 22 || val("PS-502") > 26)
+        return "Control-power telemetry outside fictional demo band or invalid.";
+    }
+    if(index === 1) {
+      if(!running) return "Resume telemetry logging first.";
+      if(!valid("COM-501") || val("COM-501") < 95) return "Telemetry-link demo signal invalid.";
+      const bad=sensors.filter(s=>s.fault!=="normal" || s.status!=="OK" || !Number.isFinite(s.value));
+      if(bad.length) return bad.length + " sensor signal(s) require review; first: " + bad[0].tag + ".";
+    }
+    if(index === 2) {
+      const errors=fuelAudit();
+      if(errors.length) return errors[0] + (errors.length>1 ? " (and more)" : "");
+    }
+    if(index === 3) {
+      for(const tag of ["PT-401","PT-402","TT-401","LT-401","TT-301","TT-302","VT-301","VT-302","AX-301","AX-302"])
+        if(!valid(tag)) return "Bad simulated support-system signal: " + tag;
+      if(val("PT-401") < 150 || val("PT-401") > 210 || val("PT-402") > 10 || val("TT-401") > 55 || val("LT-401") < 30)
+        return "Hydraulic system is outside invented training limits.";
+      if(val("TT-301") > 65 || val("TT-302") > 65 || val("VT-301") > 1.2 || val("VT-302") > 1.2 || Math.abs(val("AX-301")) > .3 || Math.abs(val("AX-302")) > .3)
+        return "Bearing / shaft demo measurements require review.";
+    }
+    if(index === 4 && !$('rl-hmi-mode').checked) return "Check the browser-only training mode acknowledgment.";
+    if(index === 5 && !$('rl-hmi-mode').checked) return "Training acknowledgment is no longer selected.";
+    return null; // Passed the fictional software condition.
+  }
+  function hmiEvent(message) {
+    const now=new Date().toLocaleTimeString();
+    hmi.messages.unshift(now + "  " + message);
+    hmi.messages.length=Math.min(8,hmi.messages.length);
+    $("rl-hmi-log").textContent=hmi.messages.join("\n");
+    event("Test HMI · " + message);
+  }
+  const hmiStepNodes=[];
+  for(let i=0;i<HMI_STAGES.length;i++) {
+    const [num,label,desc]=HMI_STAGES[i];
+    const wrap=document.createElement("div"); wrap.className="rl-seq-step";
+    const title=document.createElement("div");title.className="rl-seq-title";title.textContent=num+" · "+label;
+    const explanation=document.createElement("div");explanation.className="rl-seq-detail";explanation.textContent=desc;
+    const indicator=document.createElement("div");indicator.className="rl-seq-state";
+    const button=document.createElement("button");button.type="button";button.textContent=i===5?"ARM SIMULATION":"VERIFY & ADVANCE";
+    button.addEventListener("click",()=>{
+      if(hmi.aborted || hmi.active || i!==hmi.completed) return;
+      const fault=hmiCheck(i);
+      if(fault){ hmiEvent("BLOCKED · "+label+" · "+fault); hmiRender(); return; }
+      hmi.completed=i+1;
+      hmiEvent("PASSED · "+label);
+      hmiRender();
+    });
+    wrap.append(title,explanation,indicator,button);$("rl-hmi-sequence").append(wrap);
+    hmiStepNodes.push({wrap,indicator,button});
+  }
+  // The markup placeholder exists for no-JS fallback but should disappear on init.
+  $("rl-hmi-sequence").querySelector(".rl-note")?.remove();
+  function hmiStop(reason, isAbort) {
+    if(legacyStop) {try{legacyStop();}catch(e){console.warn("Original demo stop failed",e);}}
+    hmi.active=false;
+    if(isAbort) hmi.aborted=true;
+    hmi.completed=0; // Every subsequent test requires ordered verification again.
+    setDrawdownState(false,"Virtual test stopped · tank levels preserved");
+    const status=document.getElementById("engineStatus");
+    if(status) status.textContent="Engine Status: "+(isAbort?"SIM ABORTED / RESET REQUIRED":"SIM TEST STOPPED / INTERLOCKED");
+    hmiEvent((isAbort?"ABORT · ":"STOP · ")+reason);
+    hmiRender();
+  }
+  function hmiRender() {
+    // Revalidate previously cleared gates rather than merely trusting old clicks.
+    if(!hmi.aborted && hmi.completed>0) {
+      for(let i=0;i<hmi.completed;i++) {
+        const fault=hmiCheck(i);
+        if(fault){
+          if(hmi.active){hmiStop("Previously verified gate lost: "+HMI_STAGES[i][1]+" · "+fault,true);return;}
+          hmi.completed=i;
+          hmiEvent("RECHECK REQUIRED · "+HMI_STAGES[i][1]+" · "+fault);
+          break;
+        }
+      }
+    }
+    hmiStepNodes.forEach(({wrap,indicator,button},i)=>{
+      let state="waiting", text="WAITING FOR PREVIOUS STEP";
+      if(i<hmi.completed){state="passed";text="● VERIFIED";}
+      else if(i===hmi.completed && !hmi.aborted && !hmi.active) {
+        const reason=hmiCheck(i);
+        state=reason?"blocked":"next";
+        text=reason?"● BLOCKED · "+reason:"● READY TO VERIFY";
+      }
+      if(hmi.aborted){state="blocked";text="● RESET REQUIRED";}
+      wrap.dataset.state=state;indicator.textContent=text;
+      button.disabled=(hmi.aborted || hmi.active || i!==hmi.completed || Boolean(hmiCheck(i)));
+    });
+    const canStart=!hmi.aborted && !hmi.active && hmi.completed===HMI_STAGES.length && HMI_STAGES.every((_,i)=>!hmiCheck(i));
+    const start=$("rl-hmi-start");start.disabled=!canStart;
+    start.textContent=canStart?"▶ START VIRTUAL TEST":"▶ START VIRTUAL TEST — INTERLOCKED";
+    const badge=$("rl-hmi-badge");badge.classList.toggle("ready",canStart || hmi.active);badge.classList.toggle("bad",hmi.aborted);
+    badge.textContent=hmi.aborted?"ABORT LATCHED — RESET REQUIRED":hmi.active?"SIMULATED RUN IN PROGRESS":canStart?"ALL DEMO CHECKS PASSED — READY":"START INTERLOCKED";
+    $("rl-hmi-state").textContent=hmi.aborted?"ABORT":hmi.active?"SIM RUN":canStart?"ARMED":"IDLE";
+    $("rl-hmi-rpm").textContent=Math.round(hmi.rpm).toLocaleString();
+    $("rl-hmi-time").textContent=hmi.time.toFixed(1)+" s";
+    $("rl-hmi-progress").textContent=hmi.completed+" / "+HMI_STAGES.length;
+  }
+  function hmiDraw() {
+    const c=$("rl-hmi-graph");if(!c)return;
+    const dpr=Math.min(devicePixelRatio||1,2),rect=c.getBoundingClientRect();
+    const w=Math.max(240,Math.round(rect.width)),h=175;
+    if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);}
+    const ctx=c.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+    const L=52,R=w-15,T=20,B=h-28, ymax=30000;
+    ctx.strokeStyle="#345064";ctx.lineWidth=1;ctx.fillStyle="#adcde0";ctx.font="11px Segoe UI, Arial";
+    for(let n=0;n<=3;n++){
+      const y=B-(B-T)*n/3;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();
+      ctx.fillText((ymax*n/3000).toFixed(0)+"k",8,y+4);
+    }
+    ctx.fillText("VIRTUAL RPM / RECENT SAMPLES",L,13);
+    const pts=hmi.history;
+    if(pts.length>1){ctx.strokeStyle="#6addc0";ctx.lineWidth=2.4;ctx.beginPath();
+      pts.forEach((v,i)=>{const x=L+i*(R-L)/Math.max(1,pts.length-1),y=B-Math.max(0,Math.min(1,v/ymax))*(B-T);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();
+    }
+  }
+  $("rl-hmi-start").addEventListener("click",()=>{
+    if(hmi.aborted || hmi.active || hmi.completed!==HMI_STAGES.length || HMI_STAGES.some((_,i)=>hmiCheck(i))){hmiEvent("START REJECTED · interlock not satisfied");hmiRender();return;}
+    hmi.time=0;hmi.rpm=0;hmi.history=[];hmi.active=true;
+    if(legacyStart){try{legacyStart();}catch(e){hmiStop("Original training model failed",true);return;}}
+    setDrawdownState(true,"Tank inventory decreasing · virtual demonstration");
+    hmiEvent("VIRTUAL TEST STARTED · software-only, no real actuation");
+    const status=document.getElementById("engineStatus");
+    if(status)status.textContent="Engine Status: VIRTUAL TEST RUNNING";
+    hmiRender();
+  });
+  $("rl-hmi-stop").addEventListener("click",()=>hmiStop("Operator pressed STOP / ABORT",true));
+  $("rl-hmi-reset").addEventListener("click",()=>{
+    if(legacyStop){try{legacyStop();}catch(e){console.warn(e);}}
+    hmi.active=false;hmi.aborted=false;hmi.completed=0;hmi.rpm=0;hmi.time=0;hmi.history=[];
+    setDrawdownState(false,"Demo halted · tank conditions preserved");
+    $("rl-hmi-mode").checked=false;
+    hmiEvent("MASTER RESET · sequence cleared; simulated faults and tank levels NOT cleared");
+    hmiRender();hmiDraw();
+  });
+  $("rl-hmi-mode").addEventListener("change",hmiRender);
+  // A non-safety-rated timer, purely for browser visualizations.
+  setInterval(()=>{
+    if(hmi.active)hmi.time+=0.25;
+    const throttleValue=Number(document.getElementById("throttle")?.value ?? 60);
+    const command=Math.max(0,Math.min(100,Number.isFinite(throttleValue)?throttleValue:60));
+    const target=hmi.active?command*300:0;
+    // If the original training simulator exposes its RPM readout, use it as
+    // the single feedback source. Otherwise fall back to a first-order demo.
+    const legacyRpmText=document.getElementById("rpm")?.textContent ?? "";
+    const legacyNumber=Number.parseFloat(legacyRpmText.replaceAll(",", ""));
+    if(legacyStart && Number.isFinite(legacyNumber)) hmi.rpm=Math.max(0,legacyNumber);
+    else hmi.rpm+=(target-hmi.rpm)*0.12;
+    if(hmi.rpm<.5)hmi.rpm=0;
+    hmi.history.push(hmi.rpm);if(hmi.history.length>120)hmi.history.shift();
+    if(hmi.active && hmi.time>=15){hmiStop("15-second virtual test completed",false);}
+    hmiRender();hmiDraw();
+  },250);
+  window.addEventListener("resize",hmiDraw);
+  hmiEvent("HMI loaded — begin with step 01; direct original START remains disabled");
+  hmiRender();hmiDraw();
+
   // Prevent the original demo START button from initiating a mock launch.
   document.querySelectorAll('button[onclick*="startEngine"]').forEach(b=>{
     b.disabled=true;b.title="RocketLab engine start disabled during instrumentation development";
   });
-  window.startEngine=function(){event("Engine start requested but locked for instrumentation development");};
+  window.startEngine=function(){event("Direct original START blocked; use ordered virtual test HMI");};
+  document.querySelectorAll('button[onclick*="stopEngine"]').forEach(b=>{
+    b.disabled=true;b.title="Use HMI STOP / ABORT DEMO for the virtual test";
+  });
   try { if (typeof engineRunning !== "undefined") engineRunning=false; } catch(e) {}
   const oldStatus=document.getElementById("engineStatus");
   if(oldStatus) oldStatus.textContent="Engine Status: PREFLIGHT / START LOCKED";
   select(selected);sample();setInterval(sample,500);
 })();
 </script>
-<!-- END ROCKETLAB MONITORING ADD-ON V3 -->
+<!-- END ROCKETLAB MONITORING ADD-ON V4 -->
+
+
+
